@@ -1188,7 +1188,7 @@ bool DebuggerPluginPrivate::parseArgument(QStringList::const_iterator &it,
                         kit = KitManager::kit(Utils::equal(&Kit::displayName, val));
                 } else if (key == "server") {
                     startMode = AttachToRemoteServer;
-                    remoteChannel = remoteChannel;
+                    remoteChannel = val;
                 } else if (key == "core") {
                     startMode = AttachCore;
                     coreFile = val;
@@ -1213,6 +1213,9 @@ bool DebuggerPluginPrivate::parseArgument(QStringList::const_iterator &it,
         } else if (startMode == AttachToRemoteServer) {
             debugger->setStartMode(AttachToRemoteServer);
             debugger->setRemoteChannel(remoteChannel);
+            debugger->setBreakOnMain(true);
+            debugger->setCommandsAfterConnect("break main\n");
+            debugger->setUseContinueInsteadOfRun(true);
             debugger->setRunControlName(tr("Remote: \"%1\"").arg(remoteChannel));
             debugger->setStartMessage(tr("Attaching to remote server %1.").arg(remoteChannel));
         } else if (startMode == AttachCore) {
