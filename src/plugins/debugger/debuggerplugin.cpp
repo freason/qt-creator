@@ -1152,7 +1152,7 @@ bool DebuggerPluginPrivate::parseArgument(QStringList::const_iterator &it,
 {
     const QString &option = *it;
     // '-debug <pid>'
-    // '-debug <exe>[,server=<server:port>][,core=<core>][,kit=<kit>][,terminal={0,1}]'
+    // '-debug <exe>[,server=<server:port>][,core=<core>][,kit=<kit>][,terminal={0,1}][,args=arg1+..+argn]'
     if (*it == "-debug") {
         ++it;
         if (it == cend) {
@@ -1168,6 +1168,7 @@ bool DebuggerPluginPrivate::parseArgument(QStringList::const_iterator &it,
         QString remoteChannel;
         QString coreFile;
         bool useTerminal = false;
+        QString execArgs;
 
         if (!pid) {
             for (const QString &arg : args) {
@@ -1194,6 +1195,11 @@ bool DebuggerPluginPrivate::parseArgument(QStringList::const_iterator &it,
                     coreFile = val;
                 } else if (key == "terminal") {
                     useTerminal = true;
+                } else if (key == "args") {
+                  QString cpVal(val);
+                  auto rpspace = cpVal.replace(QRegularExpression("\\+\\+"), " ");
+                  auto rpequ = rpspace.replace(QRegularExpression("\\+\\:"), ":=");
+                  execArgs = rpequ;
                 }
             }
         }
@@ -1203,6 +1209,13 @@ bool DebuggerPluginPrivate::parseArgument(QStringList::const_iterator &it,
         IDevice::ConstPtr device = DeviceKitInformation::device(kit);
         auto runControl = new RunControl(device, ProjectExplorer::Constants::DEBUG_RUN_MODE);
         auto debugger = new DebuggerRunTool(runControl, kit);
+        if (!execArgs.isEmpty())
+        {
+          Runnable rb = debugger->runnable();
+          rb.commandLineArguments = execArgs;
+          debugger->setInferior(rb);
+        }
+
         debugger->setInferiorExecutable(executable);
         if (pid) {
             debugger->setStartMode(AttachExternal);
